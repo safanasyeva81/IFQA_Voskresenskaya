@@ -1,30 +1,37 @@
 package ru.ifellow.jira.tests;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import ru.ifellow.jira.hooks.Hooks;
 import ru.ifellow.jira.pages.DashboardPage;
 import ru.ifellow.jira.pages.LoginPage;
-import static org.assertj.core.api.Assertions.assertThat;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class JiraLoginTest {
-        private static final String VALID_USERNAME = "AT1";
-        private static final String VALID_PASSWORD = "Qwerty123";
 
+    @BeforeAll
+    static void setupAllTests() {
+        Hooks.setupBeforeTests();
+    }
 
-        @Test
-        void successfulLoginTest() {
+    @BeforeEach
+    void openSite() {
+        new LoginPage().open();
+    }
 
-            LoginPage loginPage = new LoginPage();
-            DashboardPage dashboardPage=new DashboardPage();
-            loginPage.open();
+    @AfterEach
+    void cleanup() {
+        Hooks.cleanup();
+    }
 
-            com.codeborne.selenide.WebDriverRunner.getWebDriver().manage().window().maximize();
+    @Test
+    void testSuccessfulLogin() {
+        LoginPage loginPage = new LoginPage();
+        DashboardPage dashboardPage = loginPage.loginWithCredentials();
+        assertTrue(dashboardPage.isUserLoggedIn(),
+                "Пользователь должен быть авторизован");
 
-            loginPage.login(VALID_USERNAME, VALID_PASSWORD);
-
-            assertThat(dashboardPage.isUserLoggedIn())
-                    .as("После успешного логина пользователь должен быть авторизован")
-                    .isTrue();
-
-            System.out.println("ТЕСТ ПРОЙДЕН: Успешная авторизация");
-        }
+        System.out.println("Авторизация успешна");
+    }
 }

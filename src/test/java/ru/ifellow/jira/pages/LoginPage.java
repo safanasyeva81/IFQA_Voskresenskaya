@@ -2,9 +2,10 @@ package ru.ifellow.jira.pages;
 
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
+import ru.ifellow.jira.hooks.Hooks;
+import java.time.Duration;
 import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Selenide.$x;
-import static com.codeborne.selenide.Selenide.sleep;
 
 public class LoginPage {
     private final SelenideElement usernameField = $x("//input[@id='login-form-username']");
@@ -13,33 +14,41 @@ public class LoginPage {
     private final SelenideElement errorMessage = $x("//div[contains(@class, 'aui-message-error')]");
 
     public LoginPage open() {
-        Selenide.open("https://edujira.ifellow.ru/login.jsp");
-        loginButton.shouldBe(visible);
+
+        Selenide.open(Hooks.getLoginPageUrl());
+        loginButton.shouldBe(visible, Duration.ofSeconds(10));
         return this;
     }
 
+    public DashboardPage loginWithCredentials() {
+        enterUsername(Hooks.getUsername());
+        enterPassword(Hooks.getPassword());
+        clickLoginButton();
+        return new DashboardPage();
+    }
+
     public LoginPage enterUsername(String username) {
-        usernameField.shouldBe(visible).setValue(username);
+        usernameField.shouldBe(visible, Duration.ofSeconds(5)).setValue(username);
         return this;
     }
 
     public LoginPage enterPassword(String password) {
-        passwordField.shouldBe(visible).setValue(password);
+        passwordField.shouldBe(visible, Duration.ofSeconds(5)).setValue(password);
         return this;
     }
 
     public void clickLoginButton() {
-        loginButton.shouldBe(visible).click();
-        sleep(1000);
+        loginButton.shouldBe(visible, Duration.ofSeconds(5)).click();
+            $x("//a[@id='header-details-user-fullname']")
+                .shouldBe(visible, Duration.ofSeconds(10));
     }
 
     public boolean isErrorMessageDisplayed() {
-        sleep(500);
-        return errorMessage.exists() && errorMessage.isDisplayed();
+        return errorMessage.shouldBe(visible, Duration.ofSeconds(5)).isDisplayed();
     }
 
     public String getErrorMessageText() {
-        return errorMessage.shouldBe(visible).getText();
+        return errorMessage.shouldBe(visible, Duration.ofSeconds(5)).getText();
     }
 
     public void login(String username, String password) {
@@ -49,10 +58,6 @@ public class LoginPage {
     }
 
     public boolean isOnLoginPage() {
-        return loginButton.shouldBe(visible).isDisplayed();
-    }
-
-    public void waitAfterLogin() {
-        sleep(2000);
+        return loginButton.shouldBe(visible, Duration.ofSeconds(5)).isDisplayed();
     }
 }

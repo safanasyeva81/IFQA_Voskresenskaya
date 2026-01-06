@@ -2,9 +2,11 @@ package ru.ifellow.jira.pages;
 
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
+
+import java.time.Duration;
+
 import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Selenide.$x;
-import static com.codeborne.selenide.Selenide.sleep;
 import static com.codeborne.selenide.Selenide.$$x;
 
 public class IssuesPage {
@@ -13,17 +15,18 @@ public class IssuesPage {
     private final SelenideElement showingCounter = $x("//div[@class='showing']/span");
     private final ElementsCollection issuesList = $$x("//ol[@id='issue-content']//li[contains(@class, 'issue-item')]");
 
-    public void clickIssuesMenu() {
-        issuesMenu.shouldBe(visible).click();
-        sleep(2000);
+
+    public void openIssues() {
+        issuesMenu.shouldBe(visible, Duration.ofSeconds(10)).click();
+        showingCounter.shouldBe(visible, Duration.ofSeconds(10));
     }
 
     public boolean isIssuesMenuDisplayed() {
-        return issuesMenu.isDisplayed();
+        return issuesMenu.shouldBe(visible, Duration.ofSeconds(5)).isDisplayed();
     }
 
     public String getShowingCounterText() {
-        return showingCounter.shouldBe(visible).getText();
+        return showingCounter.shouldBe(visible, Duration.ofSeconds(5)).getText();
     }
 
     public int getTaskCountFromCounter() {
@@ -40,13 +43,5 @@ public class IssuesPage {
             }
         }
         return -1;
-    }
-
-    public int getActualVisibleTasksCount() {
-        return issuesList.size();
-    }
-
-    public void waitForIssuesToLoad() {
-        sleep(3000);
     }
 }

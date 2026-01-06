@@ -1,9 +1,11 @@
 package ru.ifellow.jira.pages;
 
 import com.codeborne.selenide.SelenideElement;
+
+import java.time.Duration;
+
 import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Selenide.$x;
-import static com.codeborne.selenide.Selenide.sleep;
 
 public class ProjectPage {
 
@@ -11,16 +13,15 @@ public class ProjectPage {
     private final SelenideElement testProjectLink = $x("//a[@id='admin_main_proj_link_lnk']");
 
     public void clickProjectsMenu() {
-        projectsMenu.shouldBe(visible).click();
-        sleep(1000);
+        projectsMenu.shouldBe(visible, Duration.ofSeconds(10)).click();
+        testProjectLink.shouldBe(visible, Duration.ofSeconds(5));
     }
 
     public void clickTestProject() {
-        testProjectLink.shouldBe(visible).click();
-        sleep(3000);
+        testProjectLink.shouldBe(visible, Duration.ofSeconds(5)).click();
     }
 
     public boolean isProjectsMenuDisplayed() {
-        return projectsMenu.isDisplayed();
+        return projectsMenu.shouldBe(visible, Duration.ofSeconds(5)).isDisplayed();
     }
 }

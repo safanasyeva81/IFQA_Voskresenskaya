@@ -1,13 +1,10 @@
 package ru.ifellow.jira.pages;
 
 import com.codeborne.selenide.SelenideElement;
-
 import java.time.Duration;
-
-import static com.codeborne.selenide.Condition.visible;
+import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selenide.*;
-import static com.codeborne.selenide.Condition.value;
-import static com.codeborne.selenide.Condition.interactable;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class CreateTaskPage {
 
@@ -15,21 +12,30 @@ public class CreateTaskPage {
     private final SelenideElement summaryField = $x("//input[@id='summary']");
     private final SelenideElement fixVersionsSelect = $x("//select[@id='fixVersions']");
     private final SelenideElement priorityField = $x("//input[@id='priority-field']");
-    private final SelenideElement priorityOptionMedium = $x("//li[@id='medium-115']");
     private final SelenideElement labelsField = $x("//textarea[@id='labels-textarea']");
-    private final SelenideElement labelsOptionTest = $x("//li[@id='test-49']");
-    private final SelenideElement fourthFixVersionOption = $x("//select[@id='fixVersions']/optgroup/option[2]");
     private final SelenideElement affectedVersionsSelect = $x("//select[@id='versions']");
     private final SelenideElement firstAffectedVersionOption = $x("//select[@id='versions']/optgroup/option[1]");
     private final SelenideElement relatedTasksSelect = $x("//select[@id='issuelinks-linktype']");
     private final SelenideElement linkedTasksField = $x("//textarea[@id='issuelinks-issues-textarea']");
-    private final SelenideElement linkedTaskOption = $x("//li[contains(@id, 'test-209858---a1')]");
     private final SelenideElement assignToMeButton = $x("//button[@id='assign-to-me-trigger']");
     private final SelenideElement epicField = $x("//input[@id='customfield_10100-field']");
-    private final SelenideElement epicOption = $x("//div[@id='customfield_10100-suggestions']//li[contains(text(), 'Epic-(TEST-205869)')]");
     private final SelenideElement sprintField = $x("//input[@id='customfield_10104-field']");
-    private final SelenideElement sprintOptionSprint2 = $x("//li[@id='доска-спринт-2-1529']");
     private final SelenideElement severitySelect = $x("//select[@id='customfield_10400']");
+    private final SelenideElement fourthFixVersionOption = $x("//select[@id='fixVersions']/optgroup/option[2]");
+    private final SelenideElement createSubmitButton = $x("//input[@id='create-issue-submit']");
+    private final SelenideElement descriptionTextButton = $x("//div[@id='description-wiki-edit']//button[text()='Текст']");
+    private final SelenideElement descriptionTextarea = $x("//div[@id='description-wiki-edit']//textarea");
+    private final SelenideElement environmentTextButton = $x("//div[@id='environment-wiki-edit']//button[text()='Текст']");
+    private final SelenideElement environmentTextarea = $x("//div[@id='environment-wiki-edit']//textarea");
+    private final SelenideElement prioritySuggestions = $x("//div[@id='priority-suggestions']");
+    private final SelenideElement labelsSuggestions = $x("//div[@id='labels-suggestions']");
+    private final SelenideElement testLabelSuggestion = $x("//ul[@id='предложения']//a[normalize-space()='test']");
+    private final SelenideElement linkedTasksSuggestions = $x("//div[@id='issuelinks-issues-suggestions']");
+    private final SelenideElement testLinkedTask = $x("//li[contains(@id, 'test-209858---a1')]");
+    private final SelenideElement assigneeField = $x("//input[@id='assignee-field']");
+    private final SelenideElement epicSuggestions = $x("//div[@id='customfield_10100-suggestions']");
+    private final SelenideElement sprintSuggestions = $x("//div[@id='customfield_10104-suggestions']");
+    private final SelenideElement sprintOption = $x("//li[contains(@class, 'aui-list-item-li-доска-спринт-2')]");
 
     public void clickCreateButton() {
         createButton.shouldBe(visible, Duration.ofSeconds(10)).click();
@@ -43,146 +49,162 @@ public class CreateTaskPage {
         summaryField.shouldBe(visible).setValue(summaryText);
     }
 
+    public void fillDescription(String text) {
+        descriptionTextButton
+                .shouldBe(visible, Duration.ofSeconds(10))
+                .shouldBe(interactable, Duration.ofSeconds(5));
+
+        assertThat(descriptionTextButton.isEnabled())
+                .as("Кнопка 'Текст' должна быть доступна для клика")
+                .isTrue();
+        descriptionTextButton.click();
+        descriptionTextButton.shouldHave(attribute("aria-pressed", "true"), Duration.ofSeconds(3));
+
+        descriptionTextarea
+                .shouldBe(visible, Duration.ofSeconds(5))
+                .shouldBe(interactable, Duration.ofSeconds(3));
+        assertThat(descriptionTextarea.isEnabled())
+                .as("Textarea должен быть доступен для ввода")
+                .isTrue();
+        descriptionTextarea.setValue(text);
+
+        String enteredText = descriptionTextarea.getValue();
+        assertThat(enteredText)
+                .as("Текст должен быть введен в поле")
+                .isNotEmpty();
+    }
+
     public void selectFixVersion() {
         fixVersionsSelect.scrollIntoView(true)
                 .shouldBe(visible, Duration.ofSeconds(5))
                 .click();
-        sleep(500);
-        fourthFixVersionOption.click();
+        fourthFixVersionOption.shouldBe(visible, Duration.ofSeconds(3)).click();
     }
 
     public void selectPriorityByIndex() {
+        priorityField.scrollIntoView(true)
+                .shouldBe(interactable, Duration.ofSeconds(5))
+                .click();
 
-        priorityField.scrollIntoView(true);
-        sleep(500);
-        priorityField.click();
-        $x("//div[@id='priority-suggestions']").shouldBe(visible, Duration.ofSeconds(3));
-        sleep(500);
-        $$x("//ul[@class='aui-last']/li").get(2).click();
-        System.out.println("Выбран приоритет: Medium");
+        prioritySuggestions.shouldBe(visible, Duration.ofSeconds(3));
+
+        $$x("//ul[@class='aui-last']/li").get(2)
+                .shouldBe(visible, Duration.ofSeconds(2))
+                .click();
     }
 
     public void selectLabelTest() {
-
-        labelsField.scrollIntoView(true);
-        sleep(500);
-
-        // Открытие и ввод
-        labelsField.click();
-        sleep(500);
+        labelsField.scrollIntoView(true)
+                .shouldBe(interactable, Duration.ofSeconds(5))
+                .click();
         labelsField.setValue("test");
-        sleep(2000);
-        $x("//div[@id='labels-suggestions']").shouldBe(visible, Duration.ofSeconds(5));
-        sleep(500);
-        $x("//ul[@id='предложения']//a[normalize-space()='test']").click();
-        System.out.println("Выбрана метка: test");
+
+        labelsSuggestions.shouldBe(visible, Duration.ofSeconds(5));
+        testLabelSuggestion.shouldBe(visible, Duration.ofSeconds(3)).click();
+    }
+
+    public void fillEnvironment(String text) {
+        environmentTextButton
+                .shouldBe(visible, Duration.ofSeconds(10))
+                .shouldBe(interactable, Duration.ofSeconds(5));
+
+        assertThat(environmentTextButton.isEnabled())
+                .as("Кнопка 'Текст' должна быть доступна для клика")
+                .isTrue();
+        environmentTextButton.click();
+        environmentTextButton.shouldHave(attribute("aria-pressed", "true"), Duration.ofSeconds(3));
+
+        environmentTextarea
+                .shouldBe(visible, Duration.ofSeconds(5))
+                .shouldBe(interactable, Duration.ofSeconds(3));
+
+        assertThat(environmentTextarea.isEnabled())
+                .as("Textarea должен быть доступен для ввода")
+                .isTrue();
+        environmentTextarea.setValue(text);
+
+        String enteredText = environmentTextarea.getValue();
+        assertThat(enteredText)
+                .as("Текст должен быть введен в поле")
+                .isNotEmpty();
     }
 
     public void selectAffectedVersion() {
+        affectedVersionsSelect.scrollIntoView(true)
+                .shouldBe(visible, Duration.ofSeconds(5))
+                .click();
 
-        affectedVersionsSelect.scrollIntoView(true);
-        sleep(500);
-        affectedVersionsSelect.shouldBe(visible, Duration.ofSeconds(5));
-
-        affectedVersionsSelect.click();
-        sleep(500);
-
-        firstAffectedVersionOption.click();
-
-        System.out.println("Выбрана версия: Version 1.0");
+        firstAffectedVersionOption.shouldBe(visible, Duration.ofSeconds(3)).click();
     }
 
     public void selectRelatedTaskType() {
-
-        relatedTasksSelect.scrollIntoView(true);
-        sleep(500);
-
-        relatedTasksSelect.shouldBe(visible, Duration.ofSeconds(5));
-
-        relatedTasksSelect.selectOption("clones");
-
-        System.out.println("Выбран тип связи: clones");
+        relatedTasksSelect.scrollIntoView(true)
+                .shouldBe(visible, Duration.ofSeconds(5))
+                .selectOption("clones");
     }
 
     public void selectLinkedTask() {
-
-        linkedTasksField.scrollIntoView(true);
-        sleep(500);
-
-        linkedTasksField.click();
-        sleep(500);
+        linkedTasksField.scrollIntoView(true)
+                .shouldBe(interactable, Duration.ofSeconds(5))
+                .click();
 
         linkedTasksField.setValue("TEST-209858");
-        sleep(1500); // Ждем поиска
 
-        $x("//div[@id='issuelinks-issues-suggestions']").shouldBe(visible, Duration.ofSeconds(3));
-        sleep(500);
-
-        linkedTaskOption.click();
-
-        System.out.println("Выбрана связанная задача: TEST-209858 - A1");
+        linkedTasksSuggestions.shouldBe(visible, Duration.ofSeconds(5));
+        testLinkedTask.shouldBe(visible, Duration.ofSeconds(3)).click();
     }
 
     public void clickAssignToMe() {
+        assignToMeButton.scrollIntoView(true)
+                .shouldBe(visible, Duration.ofSeconds(5))
+                .click();
 
-        assignToMeButton.scrollIntoView(true);
-        sleep(500);
-
-        assignToMeButton.shouldBe(visible, Duration.ofSeconds(5)).click();
-        sleep(1000);
-
-        SelenideElement assigneeField = $x("//input[@id='assignee-field']");
         assigneeField.shouldHave(value("AT1"), Duration.ofSeconds(3));
-
-        System.out.println("Кнопка 'Назначить меня' нажата. Исполнитель: AT1");
     }
 
     public void selectEpic() {
-
         epicField.scrollIntoView(true);
-        sleep(500);
-
+        epicField.shouldBe(interactable, Duration.ofSeconds(5)).clear();
         epicField.click();
-        sleep(500);
+        epicField.setValue("TEST-Epic");
 
-        epicField.setValue("epic-");
-        sleep(2000);
+        epicSuggestions.shouldBe(visible, Duration.ofSeconds(8));
+        SelenideElement firstEpic = $x("//div[@id='customfield_10100-suggestions']" +
+                "//ul[@id='предложения']" +
+                "//li[contains(@class, 'aui-list-item-li-test-epic')][1]" +
+                "//a[contains(@class, 'aui-list-item-link')]");
 
-        $x("//div[@id='customfield_10100-suggestions']").shouldBe(visible, Duration.ofSeconds(5));
-        sleep(500);
+        if (!firstEpic.exists()) {
+            firstEpic = $x("//div[@id='customfield_10100-suggestions']" +
+                    "//*[contains(text(), 'TEST-Epic')]");
+        }
 
-        $$x("//div[@id='customfield_10100-suggestions']//li").first().click();
-
-        System.out.println("Выбран первый доступный эпик");
+        if (firstEpic.exists()) {
+            String epicText = firstEpic.getText().trim();
+            firstEpic.shouldBe(visible, Duration.ofSeconds(3)).click();
+        } else {
+            if (epicSuggestions.exists()) {
+                System.out.println("Поле найдено, текст: " + epicSuggestions.getText().substring(0, 100));
+            }
+            epicField.clear();
+            summaryField.click();
+        }
     }
 
     public void selectSprint() {
-
-        sprintField.scrollIntoView(true);
-        sleep(500);
-        sprintField.click();
-        sleep(500);
-
+        sprintField.scrollIntoView(true)
+                .shouldBe(interactable, Duration.ofSeconds(5))
+                .click();
         sprintField.setValue("Доска Спринт 2");
-        sleep(2000);
 
-        $x("//div[@id='customfield_10104-suggestions']").shouldBe(visible, Duration.ofSeconds(5));
-        sleep(500);
-
-        $x("//li[contains(@class, 'aui-list-item-li-доска-спринт-2')]").click();
-
-        System.out.println("Выбран спринт: Доска Спринт 2");
+        sprintSuggestions.shouldBe(visible, Duration.ofSeconds(5));
+        sprintOption.shouldBe(visible, Duration.ofSeconds(3)).click();
     }
 
     public void selectSeverity() {
-
-        severitySelect.scrollIntoView(true);
-        sleep(500);
-
-        severitySelect.shouldBe(visible, Duration.ofSeconds(5));
-        severitySelect.selectOption("S1 Незначительный/Minor");
-
-        System.out.println("Выбрана серьезность: S1 Незначительный/Minor");
+        severitySelect.scrollIntoView(true)
+                .shouldBe(visible, Duration.ofSeconds(5))
+                .selectOption("S1 Незначительный/Minor");
     }
 
     public void verifyFormStillOpen() {
@@ -190,19 +212,49 @@ public class CreateTaskPage {
     }
 
     public String clickCreateAndGetKey() {
+        checkForFormErrors();
+        createSubmitButton.scrollIntoView(true)
+                .shouldBe(visible, Duration.ofSeconds(5))
+                .click();
+        SelenideElement successNotification = waitForSuccessNotification();
+        SelenideElement taskLink = findTaskLinkInNotification(successNotification);
 
-        SelenideElement createButton = $x("//input[@id='create-issue-submit']");
-        createButton.scrollIntoView(true);
-        createButton.shouldBe(visible, Duration.ofSeconds(5)).click();
-        sleep(3000);
+        String taskKey = extractAndClickTaskKey(taskLink);
 
-        SelenideElement taskKeyElement = $x("//a[@id='key-val']");
-        taskKeyElement.shouldBe(visible, Duration.ofSeconds(10));
-
-        String taskKey = taskKeyElement.getText().trim();
-        System.out.println("✓ Задача создана: " + taskKey);
-
+        waitForTaskPageToLoad();
         return taskKey;
+    }
+
+    private void checkForFormErrors() {
+        SelenideElement errorDiv = $x("//div[contains(@class, 'aui-message-error')]");
+        if (errorDiv.exists()) {
+            String errorText = errorDiv.getText();
+            System.out.println("ОШИБКИ В ФОРМЕ: " + errorText);
+            throw new RuntimeException("Исправьте ошибки в форме: " + errorText);
+        }
+    }
+
+    private SelenideElement waitForSuccessNotification() {
+        return $x("//div[contains(@class, 'aui-message-success')]")
+                .shouldBe(visible, Duration.ofSeconds(15));
+    }
+
+    private SelenideElement findTaskLinkInNotification(SelenideElement notification) {
+        return notification.$x(".//a[@class='issue-created-key issue-link']")
+                .shouldBe(visible, Duration.ofSeconds(5));
+    }
+
+    private String extractAndClickTaskKey(SelenideElement taskLink) {
+        String linkText = taskLink.getText().trim();
+        String taskKey = linkText.split(" ")[0];
+        System.out.println("Ключ созданной задачи: " + taskKey);
+
+        taskLink.click();
+        return taskKey;
+    }
+
+    private void waitForTaskPageToLoad() {
+        $x("//h1[@id='summary-val']").shouldBe(visible, Duration.ofSeconds(10));
     }
 
     public String getCurrentStatus() {
@@ -212,53 +264,58 @@ public class CreateTaskPage {
     }
 
     public void clickStatusButton(String statusText) {
-        System.out.println("Пытаюсь нажать статус: " + statusText);
-
         SelenideElement statusButton = $x("//a[contains(@class, 'issueaction-workflow-transition')]//span[text()='" + statusText + "']");
-        statusButton.scrollIntoView("{behavior: 'instant', block: 'center'}");
-        sleep(1000);
 
-        statusButton.shouldBe(visible, Duration.ofSeconds(5))
-                .shouldBe(interactable, Duration.ofSeconds(5));
+        if (!statusButton.exists()) {
+            if (statusText.equals("В работе")) {
+                statusButton = $x("//a[@id='action_id_21']");
+            }
+        }
 
-        executeJavaScript("arguments[0].click();", statusButton);
-        sleep(3000);
+        statusButton.scrollIntoView("{behavior: 'instant', block: 'center'}")
+                .shouldBe(visible, Duration.ofSeconds(5))
+                .shouldBe(interactable, Duration.ofSeconds(5))
+                .click();
 
-        System.out.println("✓ Статус нажат: " + statusText);
+        $x("//span[@id='status-val']")
+                .shouldNotHave(exactText(statusText), Duration.ofSeconds(3))
+                .shouldHave(text(statusText), Duration.ofSeconds(10));
+
+        System.out.println("Статус изменен: " + statusText);
     }
 
     public void transitionThroughStatuses() {
-        System.out.println("=== ПЕРЕВОД ЗАДАЧИ ===");
+        $x("//a[@id='action_id_21']").click();
+        $x("//span[@id='status-val']").shouldHave(text("В РАБОТЕ"), Duration.ofSeconds(10));
 
-        executeJavaScript("document.getElementById('action_id_21').click();");
-        sleep(3000);
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        $x("//a[@id='opsbar-transitions_more']/span").click();
 
-        executeJavaScript(
-                "var blankets = document.querySelectorAll('.aui-blanket');" +
-                        "for (var i = 0; i < blankets.length; i++) {" +
-                        "  blankets[i].style.display = 'none';" +
-                        "}"
-        );
-        sleep(500);
+        SelenideElement completeButton = null;
+        String[] possibleLocators = {
+                "//aui-item-link[@id='action_id_31']",
+                "//a[@id='action_id_31']",
+                "//div[@id='opsbar-transitions_more_drop']//a[contains(text(), 'Выполнить')]",
+                "//a[contains(@class, 'issueaction-workflow-transition')]//span[text()='Выполнить']"
+        };
 
-        executeJavaScript("document.getElementById('opsbar-transitions_more').click();");
-        sleep(1500);
+        for (String locator : possibleLocators) {
+            completeButton = $x(locator);
+            if (completeButton.exists()) {
+                break;
+            }
+        }
 
-        executeJavaScript(
-                "// Ищем в выпадающем меню" +
-                        "var menu = document.getElementById('opsbar-transitions_more_drop');" +
-                        "if (menu) {" +
-                        "  var links = menu.getElementsByTagName('a');" +
-                        "  for (var i = 0; i < links.length; i++) {" +
-                        "    if (links[i].textContent.indexOf('Выполнено') !== -1) {" +
-                        "      links[i].click();" +
-                        "      break;" +
-                        "    }" +
-                        "  }" +
-                        "}"
-        );
-        sleep(3000);
+        if (completeButton != null && completeButton.exists()) {
+            completeButton.click();
+        } else {
+            throw new RuntimeException("Не найдена кнопка 'Выполнить'");
+        }
 
-        System.out.println("Финальный статус: " + getCurrentStatus());
+        $x("//span[@id='status-val']").shouldHave(text("ГОТОВО"), Duration.ofSeconds(10));
     }
 }

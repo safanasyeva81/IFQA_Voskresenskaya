@@ -31,7 +31,6 @@ public class JiraLoginTest {
         DashboardPage dashboardPage = loginPage.loginWithCredentials();
         assertTrue(dashboardPage.isUserLoggedIn(),
                 "Пользователь должен быть авторизован");
-
         System.out.println("Авторизация успешна");
     }
 }

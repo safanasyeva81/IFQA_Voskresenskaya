@@ -2,7 +2,13 @@ package ru.ifellow.jira.hooks;
 
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
+import com.codeborne.selenide.WebDriverRunner;
+import io.cucumber.java.After;
+import io.cucumber.java.Before;
+import io.cucumber.java.Scenario;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.io.InputStream;
@@ -12,62 +18,85 @@ public class Hooks {
 
     private static final Properties testProps = new Properties();
     private static final Properties credentials = new Properties();
+    private static boolean propertiesLoaded = false;
 
+    // Метод для ваших старых JUnit тестов (оставляем static)
     public static void setupBeforeTests() {
-        loadProperties();
+        if (!propertiesLoaded) {
+            loadProperties();
+        }
         WebDriverManager.chromedriver().setup();
         setupSelenide();
     }
 
-    private static void loadProperties() {
+    // Метод для ваших старых JUnit тестов (оставляем static)
+    public static void cleanup() {
         try {
-            InputStream testInput = Hooks.class.getClassLoader()
-                    .getResourceAsStream("test.properties");
-            if (testInput != null) {
-                testProps.load(testInput);
-                testInput.close();
+            if (WebDriverRunner.hasWebDriverStarted()) {
+                Selenide.clearBrowserCookies();
+                Selenide.clearBrowserLocalStorage();
+                Selenide.closeWindow();
+                Selenide.closeWebDriver();
+                System.out.println("✅ Браузер успешно закрыт");
             } else {
-                System.out.println("test.properties не найден, используем значения по умолчанию");
+                System.out.println("⚠️  Браузер уже закрыт или не был открыт");
             }
         } catch (Exception e) {
-            System.out.println("Ошибка загрузки test.properties: " + e.getMessage());
+            System.out.println("⚠️  Ошибка при очистке: " + e.getMessage());
+        }
+    }
+
+    // Метод для Cucumber тестов (НЕ static)
+    @Before
+    public void setUpCucumber(Scenario scenario) {
+        System.out.println("=== Начало сценария Cucumber: " + scenario.getName() + " ===");
+
+        if (!propertiesLoaded) {
+            loadProperties();
+            propertiesLoaded = true;
         }
 
-        try {
-            InputStream credInput = Hooks.class.getClassLoader()
-                    .getResourceAsStream("credentials.properties");
-            if (credInput != null) {
-                credentials.load(credInput);
-                credInput.close();
-            } else {
-                System.out.println("Файл credentials.properties не найден");
-            }
-        } catch (Exception e) {
-            System.out.println("Ошибка загрузки credentials.properties: " + e.getMessage());
+        WebDriverManager.chromedriver().setup();
+        setupSelenide();
+    }
+
+    // Метод для Cucumber тестов (НЕ static)
+    @After
+    public void tearDownCucumber(Scenario scenario) {
+        System.out.println("=== Завершение сценария: " + scenario.getName() + " ===");
+
+        if (scenario.isFailed()) {
+            System.out.println("Сценарий упал! Делаем скриншот...");
+            takeScreenshot(scenario);
         }
+
+        // Вызываем статический метод cleanup
+        cleanup();
+    }
+
+    private void takeScreenshot(Scenario scenario) {
+        if (WebDriverRunner.hasWebDriverStarted()) {
+            try {
+                byte[] screenshot = ((TakesScreenshot) WebDriverRunner.getWebDriver())
+                        .getScreenshotAs(OutputType.BYTES);
+                scenario.attach(screenshot, "image/png", "Скриншот при падении: " + scenario.getName());
+            } catch (Exception e) {
+                System.out.println("Не удалось сделать скриншот: " + e.getMessage());
+            }
+        }
+    }
+
+    private static void loadProperties() {
+        // Ваш существующий код loadProperties()
+        // ...
     }
 
     private static void setupSelenide() {
-        Configuration.browser = testProps.getProperty("browser", "chrome");
-        Configuration.timeout = Long.parseLong(testProps.getProperty("timeout", "15000"));
-        Configuration.pageLoadTimeout = Long.parseLong(testProps.getProperty("page.load.timeout", "30000"));
-        Configuration.browserSize = testProps.getProperty("browser.size", "max");
-        Configuration.headless = Boolean.parseBoolean(testProps.getProperty("headless", "false"));
-
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--disable-notifications");
-        options.addArguments("--disable-popup-blocking");
-        options.addArguments("--remote-allow-origins=*");
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-dev-shm-usage");
-        options.addArguments("--disable-gpu");
-
-        Configuration.browserCapabilities = options;
-        Configuration.holdBrowserOpen = false;
-        Configuration.savePageSource = false;
-        Configuration.screenshots = true;
+        // Ваш существующий код setupSelenide()
+        // ...
     }
 
+    // Геттеры остаются static
     public static String getLoginPageUrl() {
         return credentials.getProperty("login.page", "https://edujira.ifellow.ru/login.jsp");
     }
@@ -107,18 +136,12 @@ public class Hooks {
     public static String getExpectedVersion() {
         return testProps.getProperty("expected.version", "Version 2.0");
     }
+
     public static String getTaskDescription() {
         return testProps.getProperty("task.description", "найден баг");
     }
 
     public static String getTaskEnvironment() {
         return testProps.getProperty("task.environment", "тестовое окружение");
-    }
-
-    public static void cleanup() {
-        Selenide.clearBrowserCookies();
-        Selenide.clearBrowserLocalStorage();
-        Selenide.closeWindow();
-        Selenide.closeWebDriver();
     }
 }
